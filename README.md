@@ -15,8 +15,12 @@ fork 后会自动切到自己的仓库：
 下载解压后找到需要的ipk文件
 
 将ipk文件传到路由器后台，使用 opkg 命令安装.
+# 1.自动版本，当前主分支 [点击这里](https://firmware-selector.openwrt.org/) 
+   在官网输入设备名称后，会显示平台,如：ramips/mt7621。复制到Action中
 
-# 获取openwrt官方源码([点击这里](https://firmware-selector.openwrt.org/))
+# 2.手动填写源码版本，[切换到源码分支](../../tree/sourcecode)
+   在源码分支中，获取 OpenWrt 官方源码（[点击这里](https://firmware-selector.openwrt.org/)）,然后填写地址
+
 ![操作截图](./firmware-selector.openwrt.org.jpeg)
 
 下拉到最下面选择SDK
@@ -54,4 +58,3 @@ fork 后会自动切到自己的仓库：
       </tr>
    </tbody>
 </table>p
-```
