@@ -69,6 +69,16 @@ jobs:
         cd plugin
         chmod +x $GITHUB_WORKSPACE/.github/scripts/get_plugin_info.sh
         $GITHUB_WORKSPACE/.github/scripts/get_plugin_info.sh
+        
+        # 检查 Makefile 是否存在
+        if [ ! -f Makefile ]; then
+          echo "错误：插件目录中没有找到 Makefile"
+          exit 1
+        fi
+        
+        # 显示 Makefile 内容以便调试
+        echo "Makefile 内容："
+        cat Makefile
 
     - name: 更新 feeds
       working-directory: openwrt
@@ -88,13 +98,20 @@ jobs:
         TARGET=$(echo "${{ github.event.inputs.target }}" | sed 's/\//\\\//g')
         echo "CONFIG_TARGET_${TARGET%/*}=y" > .config
         echo "CONFIG_TARGET_${TARGET%/*}_${TARGET#*/}=y" >> .config
-        echo "CONFIG_PACKAGE_plugin=m" >> .config
+        
+        # 使用插件的实际包名
+        PLUGIN_PACKAGE_NAME=$(grep "Package:" package/plugin/Makefile | cut -d ' ' -f 2)
+        echo "CONFIG_PACKAGE_${PLUGIN_PACKAGE_NAME}=m" >> .config
         
         # 添加插件依赖
         echo "CONFIG_ALL=y" >> .config
         echo "CONFIG_ALL_KMODS=y" >> .config
         
-        # 确保包含所有必要的包，但跳过menuconfig
+        # 尝试解析插件的依赖并添加到配置中
+        grep -oP 'depends on \K.*' package/plugin/Makefile | tr '|' '\n' | while read dep; do
+          echo "CONFIG_PACKAGE_${dep}=y" >> .config
+        done
+        
         make defconfig
         
         # 保存完整的.config文件以供参考
@@ -110,7 +127,11 @@ jobs:
       working-directory: openwrt
       run: |
         make toolchain/install
-        make package/plugin/compile V=s
+        make package/plugin/compile V=s || {
+          echo "编译失败。显示编译日志："
+          cat $(find . -name "*.log")
+          exit 1
+        }
 
     - name: 整理文件
       run: |
