@@ -84,26 +84,15 @@ jobs:
         # 确保所有内核模块可用
         echo "CONFIG_ALL_KMODS=y" >> .config
         
-        make defconfig
-        
-        # 添加插件依赖
+        # 添加所有包
         echo "CONFIG_ALL=y" >> .config
-        echo "CONFIG_ALL_KMODS=y" >> .config
         
-        # 确保包含所有必要的包
         make defconfig
-        make menuconfig
         
         # 保存完整的.config文件以供参考
         cp .config full_config.txt
 
-    - name: 设置交叉编译工具链
-      run: |
-        echo "CONFIG_TARGET_${{ github.event.inputs.target }}=y" >> openwrt/.config
-        echo "CONFIG_TARGET_BOARD=\"$(echo ${{ github.event.inputs.target }} | cut -d'/' -f1)\"" >> openwrt/.config
-        echo "CONFIG_TARGET_SUBTARGET=\"$(echo ${{ github.event.inputs.target }} | cut -d'/' -f2)\"" >> openwrt/.config
-
-    - name: 编译插件
+    - name: 编译插件及依赖
       working-directory: openwrt-sdk
       run: |
         make package/plugin/compile V=sc || {
@@ -111,6 +100,7 @@ jobs:
           find . -name "*.log" -exec cat {} \;
           exit 1
         }
+        make package/index
 
     - name: 整理文件
       run: |
@@ -119,6 +109,8 @@ jobs:
           filename=$(basename "$file")
           mv "$file" "firmware/${{ steps.set_target.outputs.TARGET_DASH }}-${{ github.event.inputs.firmware_version }}-${filename}"
         done
+        # 复制 Packages 和 Packages.gz 文件
+        cp openwrt-sdk/bin/packages/*/base/Packages* firmware/
         echo "生成的文件列表:"
         ls -l firmware
 

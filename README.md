@@ -58,3 +58,21 @@ fork 后会自动切到自己的仓库：
       </tr>
    </tbody>
 </table>
+
+## 安装说明
+
+1. 将所有 .ipk 文件上传到您的 OpenWrt 设备。
+2. 在 OpenWrt 设备上运行以下命令：
+
+   ```bash
+   opkg update
+   opkg install path/to/your-plugin.ipk
+   ```
+
+3. 如果遇到依赖问题，请使用以下命令安装所有 .ipk 文件：
+
+   ```bash
+   opkg install path/to/*.ipk
+   ```
+
+注意：确保安装的插件与您的 OpenWrt 版本和架构兼容。
