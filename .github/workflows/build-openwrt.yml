@@ -71,22 +71,24 @@ jobs:
         # 配置插件
         echo "CONFIG_PACKAGE_plugin=m" >> .config
 
-        # 配置目标架构
-        TARGET=$(echo "${{ github.event.inputs.target }}" | sed 's/\//\\\//g')
-        echo "CONFIG_TARGET_${TARGET%/*}=y" > .config
-        echo "CONFIG_TARGET_${TARGET%/*}_${TARGET#*/}=y" >> .config
-        
         # 获取插件依赖
         PLUGIN_DEPENDS=$(grep "LUCI_DEPENDS:=" package/plugin/Makefile | sed 's/LUCI_DEPENDS:=//g' | tr -d ' ' | tr '+' '\n')
 
         # 配置插件和依赖
         for dep in $PLUGIN_DEPENDS; do
-          echo "CONFIG_PACKAGE_${dep}=m" >> .config
+          if [ -d "package/${dep}" ] || [ -d "feeds/packages/${dep}" ] || [ -d "feeds/luci/${dep}" ]; then
+            echo "CONFIG_PACKAGE_${dep}=m" >> .config
+          else
+            echo "尝试从 feeds 安装依赖: ${dep}"
+            ./scripts/feeds install ${dep}
+            if [ $? -eq 0 ]; then
+              echo "CONFIG_PACKAGE_${dep}=m" >> .config
+            else
+              echo "警告: 无法找到或安装依赖 ${dep}，可能需要手动处理"
+            fi
+          fi
         done
-        
-        # 确保所有内核模块可用
-        echo "CONFIG_ALL_KMODS=y" >> .config
-        
+
         make defconfig
         
         # 保存完整的.config文件以供参考
@@ -121,8 +123,6 @@ jobs:
           固件版本: ${{ github.event.inputs.firmware_version }}
           插件源码地址: ${{ github.event.inputs.plugin_source }}
           插件版本: ${{ env.PLUGIN_VERSION }}
-
-          这个 Release 包含了编译好的 OpenWrt 插件及其依赖。
           
           文件列表：
           ````
