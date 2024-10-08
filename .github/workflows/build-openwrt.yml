@@ -78,7 +78,7 @@ jobs:
     - name: 编译插件
       working-directory: openwrt
       run: |
-        make package/${{ env.PLUGIN_NAME }}/compile V=s
+        make package/plugin/compile V=s
 
     - name: 整理文件
       run: |
