@@ -56,18 +56,21 @@ jobs:
         # 获取插件名称和版本
         NAME=$(grep -oP '(?<=NAME:=).*' Makefile)
         PKG_NAME=$(grep -oP '(?<=PKG_NAME:=).*' Makefile)
-        if [[ "$PKG_NAME" == *'$(NAME)'* ]]; then
-          PLUGIN_NAME=$(echo "$PKG_NAME" | sed 's/\$(NAME)/'"$NAME"'/g')
-        else
-          PLUGIN_NAME="$PKG_NAME"
-        fi
-        PLUGIN_VERSION=$(grep -oP '(?<=PKG_VERSION:=).*' Makefile)
-        echo "PLUGIN_NAME=$PLUGIN_NAME" >> $GITHUB_ENV
-        echo "PLUGIN_VERSION=$PLUGIN_VERSION" >> $GITHUB_ENV
 
         echo "插件名称: $NAME"
         echo "插件包名称: $PKG_NAME"
+
+        if [[ "$PKG_NAME" == *'$(NAME)'* ]]; then
+          # PLUGIN_NAME=$(echo "$PKG_NAME" | sed 's/\$(NAME)/'"$NAME"'/g')
+          PLUGIN_NAME=$(echo "$PKG_NAME" | awk -v name="$NAME" '{gsub(/\$NAME/, name); print}')
+        else
+          PLUGIN_NAME="$PKG_NAME"
+        fi
+        echo "PLUGIN_NAME=$PLUGIN_NAME" >> $GITHUB_ENV
         echo "插件合并名称: $PLUGIN_NAME"
+
+        PLUGIN_VERSION=$(grep -oP '(?<=PKG_VERSION:=).*' Makefile)
+        echo "PLUGIN_VERSION=$PLUGIN_VERSION" >> $GITHUB_ENV
         echo "插件版本: $PLUGIN_VERSION"
 
     - name: 更新 feeds
