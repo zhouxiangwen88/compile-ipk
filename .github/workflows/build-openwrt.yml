@@ -32,16 +32,12 @@ jobs:
         libncursesw5-dev libssl-dev python3 python3-distutils python3-setuptools \
         unzip wget rsync subversion swig time xsltproc zlib1g-dev tree
 
-    - name: 设置 Python 软链接
-      run: |
-        sudo ln -sf /usr/bin/python3 /usr/bin/python
-
     - name: 设置目标变量
       id: set_target
       run: |
         echo "TARGET_DASH=$(echo ${{ github.event.inputs.target }} | sed 's/\//-/')" >> $GITHUB_OUTPUT
 
-    - name: 下载并解压 OpenWrt 源码
+    - name: 下载并解压 OpenWrt SDK
       run: |
         SDK_BASE_URL="https://downloads.openwrt.org/releases/${{ github.event.inputs.firmware_version }}/targets/${{ github.event.inputs.target }}/"
         SDK_FILE=$(curl -s $SDK_BASE_URL | grep -oP 'openwrt-sdk-.*?-${{ steps.set_target.outputs.TARGET_DASH }}_gcc-.*?Linux-x86_64.tar.xz' | head -n 1)
@@ -51,19 +47,12 @@ jobs:
         fi
         SDK_URL="${SDK_BASE_URL}${SDK_FILE}"
         echo "下载 SDK: $SDK_URL"
-        wget $SDK_URL -O openwrt.tar.xz
-        mkdir openwrt
-        tar -xJf openwrt.tar.xz -C openwrt --strip-components 1
-
-    - name: 检查 SDK 下载
-      run: |
-        if [ ! -f openwrt.tar.xz ]; then
-          echo "SDK 下载失败"
-          exit 1
-        fi
+        wget $SDK_URL -O openwrt-sdk.tar.xz
+        mkdir openwrt-sdk
+        tar -xJf openwrt-sdk.tar.xz -C openwrt-sdk --strip-components 1
 
     - name: 克隆插件源码
-      working-directory: openwrt/package
+      working-directory: openwrt-sdk/package
       run: |
         git clone ${{ github.event.inputs.plugin_source }} plugin
         cd plugin
@@ -71,54 +60,81 @@ jobs:
         $GITHUB_WORKSPACE/.github/scripts/get_plugin_info.sh
 
     - name: 更新 feeds
-      working-directory: openwrt
+      working-directory: openwrt-sdk
       run: |
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
-    - name: 检查工作目录
-      working-directory: openwrt
+    - name: 配置 SDK
+      working-directory: openwrt-sdk
       run: |
-        pwd
-        ls -la
-
-    - name: 配置 OpenWrt
-      working-directory: openwrt
-      run: |
-        TARGET=$(echo "${{ github.event.inputs.target }}" | sed 's/\//\\\//g')
-        echo "CONFIG_TARGET_${TARGET%/*}=y" > .config
-        echo "CONFIG_TARGET_${TARGET%/*}_${TARGET#*/}=y" >> .config
-        echo "CONFIG_PACKAGE_plugin=m" >> .config
+        # 获取插件包名和依赖
+        PLUGIN_PACKAGE_NAME=$(grep "Package:" package/plugin/Makefile | cut -d ' ' -f 2)
+        PLUGIN_DEPENDS=$(grep "DEPENDS:=" package/plugin/Makefile | sed 's/DEPENDS:=//g' | tr '+' '\n')
+        
+        # 配置目标架构
+        echo "CONFIG_TARGET_${{ github.event.inputs.target }}=y" > .config
+        
+        # 配置插件和依赖
+        echo "CONFIG_PACKAGE_${PLUGIN_PACKAGE_NAME}=m" >> .config
+        for dep in $PLUGIN_DEPENDS; do
+          echo "CONFIG_PACKAGE_${dep}=m" >> .config
+        done
+        
+        # 确保所有内核模块可用
+        echo "CONFIG_ALL_KMODS=y" >> .config
+        
         make defconfig
 
     - name: 编译插件
-      working-directory: openwrt
+      working-directory: openwrt-sdk
       run: |
-        make package/plugin/compile V=s
+        make package/plugin/compile V=sc || {
+          echo "插件编译失败。显示详细日志："
+          find . -name "*.log" -exec cat {} \;
+          exit 1
+        }
 
     - name: 整理文件
       run: |
         mkdir -p firmware
-        find openwrt/bin/packages/ -name "${{ env.PLUGIN_NAME }}*.ipk" | xargs -I {} mv {} firmware/
-        cd firmware
-        for file in *.ipk; do
-          mv "$file" "${{ steps.set_target.outputs.TARGET_DASH }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.ipk"
+        find openwrt-sdk/bin/packages/ -name "*.ipk" | while read file; do
+          filename=$(basename "$file")
+          mv "$file" "firmware/${{ steps.set_target.outputs.TARGET_DASH }}-${{ github.event.inputs.firmware_version }}-${filename}"
         done
         echo "生成的文件列表:"
-        ls -l
+        ls -l firmware
 
     - name: 创建 Release
       uses: softprops/action-gh-release@v1
       with:
         files: firmware/*
-        name: ${{ steps.set_target.outputs.TARGET_DASH }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
-        tag_name: v${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
+        name: ${{ steps.set_target.outputs.TARGET_DASH }}-${{ github.event.inputs.firmware_version }}-插件包
+        tag_name: v${{ github.event.inputs.firmware_version }}-${{ steps.set_target.outputs.TARGET_DASH }}-plugins
         body: |
           目标平台/架构: ${{ github.event.inputs.target }}
           固件版本: ${{ github.event.inputs.firmware_version }}
           插件源码地址: ${{ github.event.inputs.plugin_source }}
           插件版本: ${{ env.PLUGIN_VERSION }}
-
-          这个 Release 包含了编译好的 OpenWrt 插件。
+          
+          这个 Release 包含了编译好的 OpenWrt 插件及其依赖。
+          
+          文件列表：
+          ````
+          ${{ steps.list_files.outputs.files }}
+          ````
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 列出文件
+      id: list_files
+      run: |
+        echo "files<<EOF" >> $GITHUB_OUTPUT
+        ls -l firmware >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: 显示编译日志
+      if: failure()
+      run: |
+        echo "编译失败。显示所有日志文件："
+        find openwrt-sdk -name "*.log" -exec cat {} \;
