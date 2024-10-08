@@ -51,9 +51,7 @@ jobs:
       run: |
         git clone ${{ github.event.inputs.plugin_source }} plugin
         cd plugin
-        echo "PLUGIN_NAME=$(grep -oP '(?<=PKG_NAME:=).*' Makefile)" >> $GITHUB_ENV
         echo "PLUGIN_VERSION=$(grep -oP '(?<=PKG_VERSION:=).*' Makefile)" >> $GITHUB_ENV
-        echo "插件名称: ${{ env.PLUGIN_NAME }}"
         echo "插件版本: ${{ env.PLUGIN_VERSION }}"
 
     - name: 更新 feeds
@@ -81,7 +79,11 @@ jobs:
         mkdir -p firmware
         find openwrt/bin/packages/ -name "*.ipk" | xargs -I {} mv {} firmware/
         cd firmware
-        rename 's/^/${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-/' *
+        echo "生成的文件列表:"
+        ls -lR firmware -type f -printf "%P\n"
+        for file in *.ipk; do
+          mv "$file" "${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-$file-${{ env.PLUGIN_VERSION }}.ipk"
+        done
 
     - name: 创建 Release
       uses: softprops/action-gh-release@v1
