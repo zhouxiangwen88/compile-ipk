@@ -3,18 +3,14 @@ name: 编译 OpenWrt 插件
 on:
   workflow_dispatch:
     inputs:
-      device_name:
-        description: '设备名称'
+      target:
+        description: '目标平台/架构 (例如: ramips/mt7621)'
         required: true
-        default: 'k2p'
+        default: 'ramips/mt7621'
       firmware_version:
         description: '固件版本'
         required: true
-        default: '22.03'
-      openwrt_source:
-        description: 'OpenWrt源码sdk压缩包地址'
-        required: true
-        default: 'https://mirror-03.infra.openwrt.org/releases/22.03.0/targets/ramips/mt7621/openwrt-sdk-22.03.0-ramips-mt7621_gcc-11.2.0_musl.Linux-x86_64.tar.xz'
+        default: '22.03.5'
       plugin_source:
         description: '插件源码地址'
         required: true
@@ -34,7 +30,7 @@ jobs:
         sudo apt-get install -y build-essential ccache ecj fastjar file g++ gawk \
         gettext git java-propose-classpath libelf-dev libncurses5-dev \
         libncursesw5-dev libssl-dev python3 python3-distutils python3-setuptools \
-        unzip wget rsync subversion swig time xsltproc zlib1g-dev tree
+        unzip wget rsync subversion swig time xsltproc zlib1g-dev tree jq
 
     - name: 设置 Python 软链接
       run: |
@@ -42,18 +38,16 @@ jobs:
 
     - name: 下载并解压 OpenWrt 源码
       run: |
-        wget ${{ github.event.inputs.openwrt_source }} -O openwrt.tar.xz
+        SDK_URL="https://downloads.openwrt.org/releases/${{ github.event.inputs.firmware_version }}/targets/${{ github.event.inputs.target }}/openwrt-sdk-${{ github.event.inputs.firmware_version }}-${{ github.event.inputs.target.replace('/', '-') }}_gcc-*.Linux-x86_64.tar.xz"
+        wget $(curl -s $SDK_URL | grep -oP 'https://.*\.tar\.xz') -O openwrt.tar.xz
         mkdir openwrt
         tar -xJf openwrt.tar.xz -C openwrt --strip-components 1
 
     - name: 克隆插件源码
       working-directory: openwrt/package
       run: |
-        # 克隆插件源码
         git clone ${{ github.event.inputs.plugin_source }} plugin
         cd plugin
-
-        # 运行获取插件信息的脚本
         chmod +x $GITHUB_WORKSPACE/.github/scripts/get_plugin_info.sh
         $GITHUB_WORKSPACE/.github/scripts/get_plugin_info.sh
 
@@ -66,10 +60,11 @@ jobs:
     - name: 配置 OpenWrt
       working-directory: openwrt
       run: |
-        # 启用指定的插件包
+        TARGET=$(echo "${{ github.event.inputs.target }}" | sed 's/\//\\\//g')
+        sed -i "s/^CONFIG_TARGET_.*=y//" .config
+        echo "CONFIG_TARGET_${TARGET%/*}=y" >> .config
+        echo "CONFIG_TARGET_${TARGET%/*}_${TARGET#*/}=y" >> .config
         echo "CONFIG_PACKAGE_plugin=m" >> .config
-        
-        # 生成完整的 .config 文件
         make defconfig
 
     - name: 编译插件
@@ -83,7 +78,7 @@ jobs:
         find openwrt/bin/packages/ -name "${{ env.PLUGIN_NAME }}*.ipk" | xargs -I {} mv {} firmware/
         cd firmware
         for file in *.ipk; do
-          mv "$file" "${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.ipk"
+          mv "$file" "${{ github.event.inputs.target.replace('/', '-') }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.ipk"
         done
         echo "生成的文件列表:"
         ls -l
@@ -92,7 +87,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: firmware/*
-        name: ${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
+        name: ${{ github.event.inputs.target.replace('/', '-') }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
         tag_name: v${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
