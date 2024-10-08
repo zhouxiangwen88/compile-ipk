@@ -61,6 +61,15 @@ jobs:
         echo "PLUGIN_NAME=$PLUGIN_NAME" >> $GITHUB_ENV
         echo "PLUGIN_VERSION=$(grep -oP '(?<=PKG_VERSION:=).*' Makefile)" >> $GITHUB_ENV
 
+        echo "::set-output name=name::$NAME"
+        echo "::set-output name=pkg_name::$PKG_NAME"
+        echo "::set-output name=plugin_name::$PLUGIN_NAME"
+        echo "::set-output name=plugin_version::$PLUGIN_VERSION"
+        echo "插件名称: $NAME"
+        echo "插件包名称: $PKG_NAME"
+        echo "插件合并名称: $PLUGIN_NAME"
+        echo "插件版本: $PLUGIN_VERSION"
+
     - name: 更新 feeds
       working-directory: openwrt
       run: |
@@ -89,6 +98,8 @@ jobs:
         for file in *.ipk; do
           mv "$file" "${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.ipk"
         done
+        echo "生成的文件列表:"
+        ls -l
 
     - name: 创建 Release
       uses: softprops/action-gh-release@v1
