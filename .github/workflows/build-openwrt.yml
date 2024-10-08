@@ -43,10 +43,24 @@ jobs:
 
     - name: 下载并解压 OpenWrt 源码
       run: |
-        SDK_URL="https://downloads.openwrt.org/releases/${{ github.event.inputs.firmware_version }}/targets/${{ github.event.inputs.target }}/openwrt-sdk-${{ github.event.inputs.firmware_version }}-${{ steps.set_target.outputs.TARGET_DASH }}_gcc-*.Linux-x86_64.tar.xz"
-        wget $(curl -s $SDK_URL | grep -oP 'https://.*\.tar\.xz') -O openwrt.tar.xz
+        SDK_BASE_URL="https://downloads.openwrt.org/releases/${{ github.event.inputs.firmware_version }}/targets/${{ github.event.inputs.target }}/"
+        SDK_FILE=$(curl -s $SDK_BASE_URL | grep -oP 'openwrt-sdk-.*?-${{ steps.set_target.outputs.TARGET_DASH }}_gcc-.*?Linux-x86_64.tar.xz' | head -n 1)
+        if [ -z "$SDK_FILE" ]; then
+          echo "无法找到匹配的 SDK 文件"
+          exit 1
+        fi
+        SDK_URL="${SDK_BASE_URL}${SDK_FILE}"
+        echo "下载 SDK: $SDK_URL"
+        wget $SDK_URL -O openwrt.tar.xz
         mkdir openwrt
         tar -xJf openwrt.tar.xz -C openwrt --strip-components 1
+
+    - name: 检查 SDK 下载
+      run: |
+        if [ ! -f openwrt.tar.xz ]; then
+          echo "SDK 下载失败"
+          exit 1
+        fi
 
     - name: 克隆插件源码
       working-directory: openwrt/package
