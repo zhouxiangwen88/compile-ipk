@@ -19,14 +19,6 @@ on:
         description: '插件源码地址'
         required: true
         default: 'https://github.com/sirpdboy/luci-app-netwizard.git'
-      plugin_name:
-        description: '编译后的插件名'
-        required: true
-        default: 'luci-app-netwizard'
-      plugin_version:
-        description: '插件版本'
-        required: true
-        default: '1.8.8'
 
 jobs:
   build:
@@ -57,8 +49,8 @@ jobs:
     - name: 克隆插件源码
       working-directory: openwrt/package
       run: |
-        git clone ${{ github.event.inputs.plugin_source }} ${{ github.event.inputs.plugin_name }}
-        echo "PLUGIN_FOLDER=${{ github.event.inputs.plugin_name }}" >> $GITHUB_ENV
+        git clone ${{ github.event.inputs.plugin_source }} plugin
+        echo "PLUGIN_NAME=$(basename ${{ github.event.inputs.plugin_source }} .git)" >> $GITHUB_ENV
 
     - name: 更新 feeds
       working-directory: openwrt
@@ -70,7 +62,7 @@ jobs:
       working-directory: openwrt
       run: |
         # 启用指定的插件包
-        echo "CONFIG_PACKAGE_${{ env.PLUGIN_FOLDER }}=m" >> .config
+        echo "CONFIG_PACKAGE_${{ env.PLUGIN_NAME }}=m" >> .config
         
         # 生成完整的 .config 文件
         make defconfig
@@ -78,12 +70,12 @@ jobs:
     - name: 编译插件
       working-directory: openwrt
       run: |
-        make package/${{ env.PLUGIN_FOLDER }}/compile V=s
+        make package/plugin/compile V=s
 
     - name: 整理文件
       run: |
         mkdir -p firmware
-        find openwrt/bin/packages/ -name "${{ github.event.inputs.plugin_name }}*.ipk" | xargs -I {} mv {} firmware/
+        find openwrt/bin/packages/ -name "*.ipk" | xargs -I {} mv {} firmware/
         cd firmware
         rename 's/^/${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-/' *
 
@@ -91,7 +83,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: firmware/*
-        name: ${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ github.event.inputs.plugin_name }}
-        tag_name: v${{ github.event.inputs.firmware_version }}-${{ github.event.inputs.plugin_name }}
+        name: ${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}
+        tag_name: v${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
