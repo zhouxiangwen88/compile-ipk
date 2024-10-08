@@ -57,7 +57,7 @@ jobs:
         NAME=$(grep -oP '(?<=NAME:=).*' Makefile)
         PKG_NAME=$(grep -oP '(?<=PKG_NAME:=).*' Makefile)
         if [[ "$PKG_NAME" == *'$(NAME)'* ]]; then
-          PLUGIN_NAME=$(echo $PKG_NAME | sed "s/\$(NAME)/$NAME/g")
+          PLUGIN_NAME=$(echo "$PKG_NAME" | sed 's/\$(NAME)/'"$NAME"'/g')
         else
           PLUGIN_NAME="$PKG_NAME"
         fi
