@@ -90,10 +90,28 @@ jobs:
         echo "CONFIG_TARGET_${TARGET%/*}_${TARGET#*/}=y" >> .config
         echo "CONFIG_PACKAGE_plugin=m" >> .config
         make defconfig
+        
+        # 添加插件依赖
+        echo "CONFIG_ALL=y" >> .config
+        echo "CONFIG_ALL_KMODS=y" >> .config
+        
+        # 确保包含所有必要的包
+        make defconfig
+        make menuconfig
+        
+        # 保存完整的.config文件以供参考
+        cp .config full_config.txt
+
+    - name: 设置交叉编译工具链
+      run: |
+        echo "CONFIG_TARGET_${{ github.event.inputs.target }}=y" >> openwrt/.config
+        echo "CONFIG_TARGET_BOARD=\"$(echo ${{ github.event.inputs.target }} | cut -d'/' -f1)\"" >> openwrt/.config
+        echo "CONFIG_TARGET_SUBTARGET=\"$(echo ${{ github.event.inputs.target }} | cut -d'/' -f2)\"" >> openwrt/.config
 
     - name: 编译插件
       working-directory: openwrt
       run: |
+        make toolchain/install
         make package/plugin/compile V=s
 
     - name: 整理文件
