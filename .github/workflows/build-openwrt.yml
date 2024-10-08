@@ -65,22 +65,20 @@ jobs:
     - name: 配置 OpenWrt
       working-directory: openwrt
       run: |
-        echo "CONFIG_TARGET_DEVICE=${{ github.event.inputs.device_name }}" >> .config
         echo "CONFIG_PACKAGE_${{ github.event.inputs.plugin_name }}=y" >> .config
         make defconfig
 
-    - name: 编译固件
+    - name: 编译插件
       working-directory: openwrt
       run: |
-        make download -j8
-        make -j$(nproc) || make -j1 V=s
+        make package/${{ github.event.inputs.plugin_name }}/compile V=s
 
     - name: 整理文件
       run: |
         mkdir -p firmware
-        find openwrt/bin/targets/ -name "*sysupgrade.bin" -or -name "*factory.bin" | xargs -I {} mv {} firmware/
+        find openwrt/bin/packages/ -name "${{ github.event.inputs.plugin_name }}*.ipk" | xargs -I {} mv {} firmware/
         cd firmware
-        rename 's/^/${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ github.event.inputs.plugin_name }}-/' *
+        rename 's/^/${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-/' *
 
     - name: 创建 Release
       uses: softprops/action-gh-release@v1

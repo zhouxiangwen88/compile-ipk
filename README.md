@@ -19,6 +19,10 @@ fork 后会自动切到自己的仓库：
 
 将ipk文件传到路由器后台，使用 opkg 命令安装.
 
+# 获取openwrt官方源码(点击这里(https://firmware-selector.openwrt.org/))
+![操作截图](./firmware-selector.openwrt.org.jpeg)
+
+
 ```bash
 opkg install /tmp/*.ipk
 ```
@@ -54,15 +58,5 @@ opkg install /tmp/*.ipk
          <td>luci-app-clash</td>
       </tr>
    </tbody>
-</table>
-
-luci-samba4 新增一项
-
-![luci-samba4 配置](./samba4.jpg)
-
-```
-名称     tmp
-路径     /tmp
-可浏览   勾选
-允许用户 ftp
+</table>p
 ```
