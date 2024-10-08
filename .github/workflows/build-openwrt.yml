@@ -80,9 +80,9 @@ jobs:
       working-directory: openwrt
       run: |
         echo "插件目录结构:"
-        tree package/${{ env.PLUGIN_FOLDER }}
+        tree package
         echo "插件目录文件列表:"
-        ls -lR package/${{ env.PLUGIN_FOLDER }}
+        ls -lR package
 
     - name: 编译插件
       working-directory: openwrt
