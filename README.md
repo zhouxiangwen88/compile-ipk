@@ -4,12 +4,9 @@
 
 fork 后会自动切到自己的仓库：
    1. 切到Action页面
-   2. 选择set_variable 工作流
-   3. 点击run workflow按钮   . 选择需要编译的目标设备
-   4. 在下拉输入框source code URL中填入需要编译的插件源码地址（注意使用https，不要使用ssh, 例：https://github.com/luochongjun/edgerouter.git ）
-   5. 在下拉输入框Openwrt package name中填入需要编译的插件名 （要编译的插件名字，例：edgerouter）
-   6. 如果源代码需要认证信息可以输入邮箱和密码，如果没有则留空
-   7. 点击Run workflow
+   2. 选择”编译 OpenWrt 插件“工作流
+   3. 点击run workflow按钮   . 填写信息
+   4. 点击Run workflow
 
 接下来会自动执行编译，编译时间快的可能2，3分钟，取决于插件本身的编译时间
 
@@ -24,10 +21,6 @@ fork 后会自动切到自己的仓库：
 
 下拉到最下面选择SKD
 ![操作截图](./infra.openwrt.org.jpeg)
-
-```bash
-opkg install /tmp/*.ipk
-```
 
 ## 可选的包
 
