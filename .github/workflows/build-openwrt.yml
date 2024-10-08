@@ -30,15 +30,20 @@ jobs:
         sudo apt-get install -y build-essential ccache ecj fastjar file g++ gawk \
         gettext git java-propose-classpath libelf-dev libncurses5-dev \
         libncursesw5-dev libssl-dev python3 python3-distutils python3-setuptools \
-        unzip wget rsync subversion swig time xsltproc zlib1g-dev tree jq
+        unzip wget rsync subversion swig time xsltproc zlib1g-dev tree
 
     - name: 设置 Python 软链接
       run: |
         sudo ln -sf /usr/bin/python3 /usr/bin/python
 
+    - name: 设置目标变量
+      id: set_target
+      run: |
+        echo "TARGET_DASH=$(echo ${{ github.event.inputs.target }} | sed 's/\//-/')" >> $GITHUB_OUTPUT
+
     - name: 下载并解压 OpenWrt 源码
       run: |
-        SDK_URL="https://downloads.openwrt.org/releases/${{ github.event.inputs.firmware_version }}/targets/${{ github.event.inputs.target }}/openwrt-sdk-${{ github.event.inputs.firmware_version }}-${{ github.event.inputs.target.replace('/', '-') }}_gcc-*.Linux-x86_64.tar.xz"
+        SDK_URL="https://downloads.openwrt.org/releases/${{ github.event.inputs.firmware_version }}/targets/${{ github.event.inputs.target }}/openwrt-sdk-${{ github.event.inputs.firmware_version }}-${{ steps.set_target.outputs.TARGET_DASH }}_gcc-*.Linux-x86_64.tar.xz"
         wget $(curl -s $SDK_URL | grep -oP 'https://.*\.tar\.xz') -O openwrt.tar.xz
         mkdir openwrt
         tar -xJf openwrt.tar.xz -C openwrt --strip-components 1
@@ -78,7 +83,7 @@ jobs:
         find openwrt/bin/packages/ -name "${{ env.PLUGIN_NAME }}*.ipk" | xargs -I {} mv {} firmware/
         cd firmware
         for file in *.ipk; do
-          mv "$file" "${{ github.event.inputs.target.replace('/', '-') }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.ipk"
+          mv "$file" "${{ steps.set_target.outputs.TARGET_DASH }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.ipk"
         done
         echo "生成的文件列表:"
         ls -l
@@ -87,7 +92,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: firmware/*
-        name: ${{ github.event.inputs.target.replace('/', '-') }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
+        name: ${{ steps.set_target.outputs.TARGET_DASH }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
         tag_name: v${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
