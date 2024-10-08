@@ -95,11 +95,7 @@ jobs:
     - name: 编译插件及依赖
       working-directory: openwrt-sdk
       run: |
-        make package/plugin/compile V=sc || {
-          echo "插件编译失败。显示详细日志："
-          find . -name "*.log" -exec cat {} \;
-          exit 1
-        }
+        make package/plugin/compile V=sc
         make package/index
 
     - name: 整理文件
@@ -141,9 +137,3 @@ jobs:
         echo "files<<EOF" >> $GITHUB_OUTPUT
         ls -l firmware >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
-
-    - name: 显示编译日志
-      if: failure()
-      run: |
-        echo "编译失败。显示所有日志文件："
-        find openwrt-sdk -name "*.log" -exec cat {} \;
