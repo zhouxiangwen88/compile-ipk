@@ -65,20 +65,34 @@ jobs:
     - name: 配置 OpenWrt
       working-directory: openwrt
       run: |
+        # 设置目标设备
+        # 这行会在 .config 文件中添加设备特定的配置
+        # 例如,如果 device_name 是 'k2p',它可能会添加类似 CONFIG_TARGET_ramips_mt7621_DEVICE_phicomm_k2p=y 的配置
+        # echo "CONFIG_TARGET_DEVICE=${{ github.event.inputs.device_name }}" >> .config
+        
+        # 启用指定的插件包
+        # 这行会在 .config 文件中添加插件的配置
+        # 例如,如果 plugin_name 是 'luci-app-netwizard-1.8.8',它会添加 CONFIG_PACKAGE_luci-app-netwizard-1.8.8=y
+        # 这告诉 OpenWrt 在编译时包含这个插件
         echo "CONFIG_PACKAGE_${{ github.event.inputs.plugin_name }}=y" >> .config
+        
+        # 生成完整的 .config 文件
+        # 这个命令会根据上面添加的配置和 OpenWrt 的默认配置,生成一个完整的配置文件
+        # 它会解析所有的依赖关系,并设置所有必要的选项
         make defconfig
 
-    - name: 编译插件
+    - name: 编译固件
       working-directory: openwrt
       run: |
-        make package/${{ github.event.inputs.plugin_name }}/compile V=s
+        make download -j8
+        make -j$(nproc) || make -j1 V=s
 
     - name: 整理文件
       run: |
         mkdir -p firmware
-        find openwrt/bin/packages/ -name "${{ github.event.inputs.plugin_name }}*.ipk" | xargs -I {} mv {} firmware/
+        find openwrt/bin/targets/ -name "*sysupgrade.bin" -or -name "*factory.bin" | xargs -I {} mv {} firmware/
         cd firmware
-        rename 's/^/${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-/' *
+        rename 's/^/${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ github.event.inputs.plugin_name }}-/' *
 
     - name: 创建 Release
       uses: softprops/action-gh-release@v1

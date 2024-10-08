@@ -19,9 +19,11 @@ fork 后会自动切到自己的仓库：
 
 将ipk文件传到路由器后台，使用 opkg 命令安装.
 
-# 获取openwrt官方源码(点击这里(https://firmware-selector.openwrt.org/))
+# 获取openwrt官方源码([点击这里](https://firmware-selector.openwrt.org/))
 ![操作截图](./firmware-selector.openwrt.org.jpeg)
 
+下拉到最下面选择SKD
+![操作截图](./infra.openwrt.org.jpeg)
 
 ```bash
 opkg install /tmp/*.ipk
