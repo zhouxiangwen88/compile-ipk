@@ -76,12 +76,17 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
+    - name: 检查工作目录
+      working-directory: openwrt
+      run: |
+        pwd
+        ls -la
+
     - name: 配置 OpenWrt
       working-directory: openwrt
       run: |
         TARGET=$(echo "${{ github.event.inputs.target }}" | sed 's/\//\\\//g')
-        sed -i "s/^CONFIG_TARGET_.*=y//" .config
-        echo "CONFIG_TARGET_${TARGET%/*}=y" >> .config
+        echo "CONFIG_TARGET_${TARGET%/*}=y" > .config
         echo "CONFIG_TARGET_${TARGET%/*}_${TARGET#*/}=y" >> .config
         echo "CONFIG_PACKAGE_plugin=m" >> .config
         make defconfig
