@@ -61,23 +61,25 @@ fork 后会自动切到自己的仓库：
 
 ## 安装说明
 
-1. 将所有 .ipk 文件上传到您的 OpenWrt 设备。
-2. 在 OpenWrt 设备上运行以下命令：
+1. 将编译好的 .ipk 文件上传到您的 OpenWrt 设备的 Web 界面（LuCI）。
 
-   ```bash
-   opkg update
-   opkg install path/to/your-plugin.ipk
-   ```
+2. 在 Web 界面中，导航到 "系统" -> "软件包"，然后上传并安装您的插件 IPK 文件。
 
-3. 如果遇到依赖问题，请使用以下命令安装所有 .ipk 文件：
+3. 系统会自动处理依赖关系：
+   - LuCI 会尝试自动安装所需的依赖包。
+   - 如果所有依赖都能成功安装，插件将直接安装完成。
 
-   ```bash
-   opkg install path/to/*.ipk
-   ```
+4. 如果安装失败：
+   - 检查错误消息，它可能会列出无法满足的依赖。
+   - 确保您的 OpenWrt 系统已更新到最新版本，并且软件源配置正确。
+   - 如果 Web 界面无法解决依赖问题，您可能需要通过 SSH 连接到设备，并使用 opkg 命令行工具手动安装依赖：
 
-注意：确保安装的插件与您的 OpenWrt 版本和架构兼容。
+     ```bash
+     opkg update
+     opkg install <missing-dependency-1> <missing-dependency-2> ...
+     opkg install /tmp/your-plugin.ipk
+     ```
 
-## 注意事项
-
-- 如果编译过程中出现关于缺失依赖的警告，您可能需要手动添加这些依赖到您的 OpenWrt 系统中。
-- 某些依赖可能需要额外的软件源或手动编译。请参考插件的文档以获取更多信息。
+注意：
+- 某些依赖可能需要额外的软件源。请参考插件的文档以获取更多信息。
+- 如果插件安装后无法正常工作，请检查系统日志以获取更多信息。

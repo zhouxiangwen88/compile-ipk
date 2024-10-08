@@ -90,9 +90,6 @@ jobs:
         done
 
         make defconfig
-        
-        # 保存完整的.config文件以供参考
-        cp .config full_config.txt
 
     - name: 编译插件及依赖
       working-directory: openwrt-sdk
