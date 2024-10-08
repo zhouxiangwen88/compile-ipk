@@ -27,17 +27,7 @@ jobs:
     steps:
     - name: 检出代码
       uses: actions/checkout@v2
-
-    - name: 克隆插件源码
-      run: |
-        # 克隆插件源码
-        git clone ${{ github.event.inputs.plugin_source }} plugin
-        cd plugin
-
-        # 运行获取插件信息的脚本
-        chmod +x $GITHUB_WORKSPACE/.github/scripts/get_plugin_info.sh
-        $GITHUB_WORKSPACE/.github/scripts/get_plugin_info.sh
-
+      
     - name: 安装依赖
       run: |
         sudo apt-get update
