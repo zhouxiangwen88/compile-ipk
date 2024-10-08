@@ -51,9 +51,15 @@ jobs:
       run: |
         git clone ${{ github.event.inputs.plugin_source }} plugin
         cd plugin
+        NAME=$(grep -oP '(?<=NAME:=).*' Makefile)
+        PKG_NAME=$(grep -oP '(?<=PKG_NAME:=).*' Makefile)
+        if [[ "$PKG_NAME" == "luci-app-\$(NAME)" ]]; then
+          PLUGIN_NAME="luci-app-$NAME"
+        else
+          PLUGIN_NAME="$PKG_NAME"
+        fi
+        echo "PLUGIN_NAME=$PLUGIN_NAME" >> $GITHUB_ENV
         echo "PLUGIN_VERSION=$(grep -oP '(?<=PKG_VERSION:=).*' Makefile)" >> $GITHUB_ENV
-        echo "插件版本: ${{ env.PLUGIN_VERSION }}"
-
     - name: 更新 feeds
       working-directory: openwrt
       run: |
@@ -72,17 +78,15 @@ jobs:
     - name: 编译插件
       working-directory: openwrt
       run: |
-        make package/plugin/compile V=s
+        make package/${{ env.PLUGIN_NAME }}/compile V=s
 
     - name: 整理文件
       run: |
         mkdir -p firmware
         find openwrt/bin/packages/ -name "*.ipk" | xargs -I {} mv {} firmware/
         cd firmware
-        echo "生成的文件列表:"
-        ls -lR firmware -type f -printf "%P\n"
         for file in *.ipk; do
-          mv "$file" "${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-$file-${{ env.PLUGIN_VERSION }}.ipk"
+          mv "$file" "${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}.ipk"
         done
 
     - name: 创建 Release
