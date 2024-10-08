@@ -6,18 +6,23 @@ on:
       device_name:
         description: '设备名称'
         required: true
+        default: 'k2p'
       firmware_version:
         description: '固件版本'
         required: true
+        default: '22.03'
       openwrt_source:
         description: 'OpenWrt 源码压缩包地址 (.tar.xz)'
         required: true
+        default: 'https://mirror-03.infra.openwrt.org/releases/22.03.0/targets/ramips/mt7621/openwrt-sdk-22.03.0-ramips-mt7621_gcc-11.2.0_musl.Linux-x86_64.tar.xz'
       plugin_source:
         description: '插件源码地址'
         required: true
+        default: 'https://github.com/sirpdboy/luci-app-netwizard.git'
       plugin_name:
         description: '编译后的插件名'
         required: true
+        default: 'luci-app-netwizard-1.8.8'
 
 jobs:
   build:
