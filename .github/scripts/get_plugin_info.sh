@@ -8,7 +8,7 @@ echo "插件名称: $NAME"
 echo "插件包名称: $PKG_NAME"
 
 if [[ "$PKG_NAME" == *'$(NAME)'* ]]; then
-  PLUGIN_NAME=$(echo "$PKG_NAME" | sed "s/\$(NAME)/$NAME/g")
+  PLUGIN_NAME=$(echo "$PKG_NAME" | sed 's/\$\(NAME\)/'$NAME'/g')
 else
   PLUGIN_NAME="$PKG_NAME"
 fi
