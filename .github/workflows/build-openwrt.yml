@@ -49,12 +49,15 @@ jobs:
     - name: 克隆插件源码
       working-directory: openwrt/package
       run: |
+        # 克隆插件源码
         git clone ${{ github.event.inputs.plugin_source }} plugin
         cd plugin
+
+        # 获取插件名称和版本
         NAME=$(grep -oP '(?<=NAME:=).*' Makefile)
         PKG_NAME=$(grep -oP '(?<=PKG_NAME:=).*' Makefile)
         if [[ "$PKG_NAME" == "luci-app-\${NAME}" ]]; then
-          PLUGIN_NAME="luci-app-${NAME}"
+          PLUGIN_NAME=$(echo $PKG_NAME | sed "s/\${NAME}/$NAME/g")
         else
           PLUGIN_NAME="$PKG_NAME"
         fi
@@ -62,10 +65,6 @@ jobs:
         echo "PLUGIN_NAME=$PLUGIN_NAME" >> $GITHUB_ENV
         echo "PLUGIN_VERSION=$PLUGIN_VERSION" >> $GITHUB_ENV
 
-        # echo "::set-output name=name::$NAME"
-        # echo "::set-output name=pkg_name::$PKG_NAME"
-        # echo "::set-output name=plugin_name::$PLUGIN_NAME"
-        # echo "::set-output name=plugin_version::$PLUGIN_VERSION"
         echo "插件名称: $NAME"
         echo "插件包名称: $PKG_NAME"
         echo "插件合并名称: $PLUGIN_NAME"
