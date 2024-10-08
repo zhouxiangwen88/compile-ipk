@@ -89,15 +89,13 @@ jobs:
         echo "CONFIG_TARGET_${TARGET%/*}=y" > .config
         echo "CONFIG_TARGET_${TARGET%/*}_${TARGET#*/}=y" >> .config
         echo "CONFIG_PACKAGE_plugin=m" >> .config
-        make defconfig
         
         # 添加插件依赖
         echo "CONFIG_ALL=y" >> .config
         echo "CONFIG_ALL_KMODS=y" >> .config
         
-        # 确保包含所有必要的包
+        # 确保包含所有必要的包，但跳过menuconfig
         make defconfig
-        make menuconfig
         
         # 保存完整的.config文件以供参考
         cp .config full_config.txt
