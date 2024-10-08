@@ -53,7 +53,7 @@ jobs:
         cd plugin
         NAME=$(grep -oP '(?<=NAME:=).*' Makefile)
         PKG_NAME=$(grep -oP '(?<=PKG_NAME:=).*' Makefile)
-        if [[ "$PKG_NAME" == "luci-app-\$(NAME)" ]]; then
+        if [[ "$PKG_NAME" == "luci-app-$(NAME)" ]]; then
           PLUGIN_NAME="luci-app-$NAME"
         else
           PLUGIN_NAME="$PKG_NAME"
