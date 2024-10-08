@@ -10,7 +10,7 @@ on:
         description: '固件版本'
         required: true
       openwrt_source:
-        description: 'OpenWrt 源码地址'
+        description: 'OpenWrt 源码压缩包地址 (.tar.xz)'
         required: true
       plugin_source:
         description: '插件源码地址'
@@ -36,8 +36,11 @@ jobs:
         python3-distutils python3-setuptools rsync subversion swig time \
         xsltproc zlib1g-dev
 
-    - name: 克隆 OpenWrt 源码
-      run: git clone ${{ github.event.inputs.openwrt_source }} openwrt
+    - name: 下载并解压 OpenWrt 源码
+      run: |
+        wget ${{ github.event.inputs.openwrt_source }} -O openwrt.tar.xz
+        mkdir openwrt
+        tar -xJf openwrt.tar.xz -C openwrt --strip-components 1
 
     - name: 克隆插件源码
       run: git clone ${{ github.event.inputs.plugin_source }} plugin
