@@ -38,7 +38,7 @@ jobs:
         sudo apt-get install -y build-essential ccache ecj fastjar file g++ gawk \
         gettext git java-propose-classpath libelf-dev libncurses5-dev \
         libncursesw5-dev libssl-dev python3 python3-distutils python3-setuptools \
-        unzip wget rsync subversion swig time xsltproc zlib1g-dev
+        unzip wget rsync subversion swig time xsltproc zlib1g-dev tree
 
     - name: 设置 Python 软链接
       run: |
@@ -51,15 +51,14 @@ jobs:
         tar -xJf openwrt.tar.xz -C openwrt --strip-components 1
 
     - name: 克隆插件源码
-      run: git clone ${{ github.event.inputs.plugin_source }} plugin
-
-    - name: 获取插件文件夹名称
+      working-directory: openwrt/package
       run: |
-        echo "PLUGIN_FOLDER=$(ls plugin | head -n 1)" >> $GITHUB_ENV
+        git clone ${{ github.event.inputs.plugin_source }}
+        echo "PLUGIN_FOLDER=$(basename ${{ github.event.inputs.plugin_source }} .git)" >> $GITHUB_ENV
         echo "插件文件夹名称: ${{ env.PLUGIN_FOLDER }}"
 
     - name: 复制插件到 OpenWrt 目录
-      run: cp -r plugin/* openwrt/package/
+      run: cp -r _${{ env.PLUGIN_FOLDER }} openwrt/package/
 
     - name: 更新 feeds
       working-directory: openwrt
@@ -80,9 +79,9 @@ jobs:
       working-directory: openwrt
       run: |
         echo "插件目录结构:"
-        tree package
+        tree package/${{ env.PLUGIN_FOLDER }}
         echo "插件目录文件列表:"
-        ls -lR package
+        ls -lR package/${{ env.PLUGIN_FOLDER }}
 
     - name: 编译插件
       working-directory: openwrt
