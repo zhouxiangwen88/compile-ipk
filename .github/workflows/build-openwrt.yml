@@ -50,7 +50,11 @@ jobs:
       working-directory: openwrt/package
       run: |
         git clone ${{ github.event.inputs.plugin_source }} plugin
-        echo "PLUGIN_NAME=$(basename ${{ github.event.inputs.plugin_source }} .git)" >> $GITHUB_ENV
+        cd plugin
+        echo "PLUGIN_NAME=$(grep -oP '(?<=PKG_NAME:=).*' Makefile)" >> $GITHUB_ENV
+        echo "PLUGIN_VERSION=$(grep -oP '(?<=PKG_VERSION:=).*' Makefile)" >> $GITHUB_ENV
+        echo "插件名称: ${{ env.PLUGIN_NAME }}"
+        echo "插件版本: ${{ env.PLUGIN_VERSION }}"
 
     - name: 更新 feeds
       working-directory: openwrt
@@ -62,7 +66,7 @@ jobs:
       working-directory: openwrt
       run: |
         # 启用指定的插件包
-        echo "CONFIG_PACKAGE_${{ env.PLUGIN_NAME }}=m" >> .config
+        echo "CONFIG_PACKAGE_plugin=m" >> .config
         
         # 生成完整的 .config 文件
         make defconfig
@@ -77,13 +81,13 @@ jobs:
         mkdir -p firmware
         find openwrt/bin/packages/ -name "*.ipk" | xargs -I {} mv {} firmware/
         cd firmware
-        rename 's/^/${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-/' *
+        rename 's/^/${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}-/' *
 
     - name: 创建 Release
       uses: softprops/action-gh-release@v1
       with:
         files: firmware/*
-        name: ${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}
-        tag_name: v${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}
+        name: ${{ github.event.inputs.device_name }}-${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
+        tag_name: v${{ github.event.inputs.firmware_version }}-${{ env.PLUGIN_NAME }}-${{ env.PLUGIN_VERSION }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
