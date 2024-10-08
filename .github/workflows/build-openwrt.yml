@@ -54,7 +54,9 @@ jobs:
       run: git clone ${{ github.event.inputs.plugin_source }} plugin
 
     - name: 获取插件文件夹名称
-      run: echo "PLUGIN_FOLDER=$(ls plugin | head -n 1)" >> $GITHUB_ENV
+      run: |
+        echo "PLUGIN_FOLDER=$(ls plugin | head -n 1)" >> $GITHUB_ENV
+        echo "插件文件夹名称: ${{ env.PLUGIN_FOLDER }}"
 
     - name: 复制插件到 OpenWrt 目录
       run: cp -r plugin/* openwrt/package/
@@ -73,6 +75,14 @@ jobs:
         
         # 生成完整的 .config 文件
         make defconfig
+
+    - name: 列出插件目录结构
+      working-directory: openwrt
+      run: |
+        echo "插件目录结构:"
+        tree package/${{ env.PLUGIN_FOLDER }}
+        echo "插件目录文件列表:"
+        ls -lR package/${{ env.PLUGIN_FOLDER }}
 
     - name: 编译插件
       working-directory: openwrt
