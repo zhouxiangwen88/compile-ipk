@@ -62,7 +62,7 @@ jobs:
         echo "插件文件夹名称: ${{ env.PLUGIN_FOLDER }}"
 
     - name: 复制插件到 OpenWrt 目录
-      run: cp -r _${{ env.PLUGIN_FOLDER }} openwrt/package/
+      run: cp -r ${{ env.PLUGIN_FOLDER }} openwrt/package/
 
     - name: 更新 feeds
       working-directory: openwrt
