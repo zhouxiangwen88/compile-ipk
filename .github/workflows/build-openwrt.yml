@@ -12,7 +12,7 @@ on:
         required: true
         default: '22.03'
       openwrt_source:
-        description: 'OpenWrt 源码压缩包地址 (.tar.xz)'
+        description: 'OpenWrt源码sdk压缩包地址'
         required: true
         default: 'https://mirror-03.infra.openwrt.org/releases/22.03.0/targets/ramips/mt7621/openwrt-sdk-22.03.0-ramips-mt7621_gcc-11.2.0_musl.Linux-x86_64.tar.xz'
       plugin_source:
@@ -57,7 +57,7 @@ jobs:
         NAME=$(grep -oP '(?<=NAME:=).*' Makefile)
         PKG_NAME=$(grep -oP '(?<=PKG_NAME:=).*' Makefile)
         if [[ "$PKG_NAME" == *'$(NAME)'* ]]; then
-          PLUGIN_NAME=$(echo $PKG_NAME | sed "s/\${NAME}/$NAME/g")
+          PLUGIN_NAME=$(echo $PKG_NAME | sed "s/\$(NAME)/$NAME/g")
         else
           PLUGIN_NAME="$PKG_NAME"
         fi
