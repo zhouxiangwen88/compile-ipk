@@ -126,9 +126,13 @@ jobs:
     - name: 编译插件
       working-directory: openwrt
       run: |
-        make toolchain/install
-        make package/plugin/compile V=s || {
-          echo "编译失败。显示编译日志："
+        make toolchain/install V=sc -j1 || {
+          echo "工具链安装失败。显示详细日志："
+          cat $(find . -name "*.log")
+          exit 1
+        }
+        make package/plugin/compile V=sc -j1 || {
+          echo "插件编译失败。显示详细日志："
           cat $(find . -name "*.log")
           exit 1
         }
@@ -159,3 +163,9 @@ jobs:
           这个 Release 包含了编译好的 OpenWrt 插件。
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 显示编译日志
+      if: failure()
+      run: |
+        echo "编译失败。显示所有日志文件："
+        find openwrt -name "*.log" -exec cat {} \;
