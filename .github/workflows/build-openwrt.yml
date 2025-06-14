@@ -10,15 +10,15 @@ on:
       firmware_version:
         description: '固件版本'
         required: true
-        default: '22.03.5'
+        default: '24.10'
       plugin_source:
         description: '插件源码地址'
         required: true
-        default: 'https://github.com/sirpdboy/luci-app-netwizard.git'
+        default: 'https://github.com/OpenListTeam/OpenList.git'
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
     - name: 检出代码
